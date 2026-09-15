@@ -8,46 +8,192 @@ const defaultProducts=[
 {id:7,name:"Pineapple Detox",cat:"Detox",price:6000,image:"https://images.unsplash.com/photo-1622597467836-f3285f2131b8?auto=format&fit=crop&w=800&q=80",desc:"Pineapple, ginger and citrus."},
 {id:8,name:"Berry Power Smoothie",cat:"Smoothie",price:7500,image:"https://images.unsplash.com/photo-1502741224143-90386d7f8c82?auto=format&fit=crop&w=800&q=80",desc:"Berry-rich smoothie for a bright start."}
 ];
+
 let products=JSON.parse(localStorage.getItem("my_products")||"null")||defaultProducts;
 let cart=JSON.parse(localStorage.getItem("my_cart")||"[]");
 let orders=JSON.parse(localStorage.getItem("my_orders")||"[]");
 let users=JSON.parse(localStorage.getItem("my_users")||"[]");
+let admins=JSON.parse(localStorage.getItem("my_admins")||"[]");
 let currentUser=JSON.parse(localStorage.getItem("my_current")||"null");
+let currentAdmin=JSON.parse(localStorage.getItem("my_current_admin")||"null");
 let admin=false, currentCat="All";
 
 const money=n=>"TZS "+Number(n).toLocaleString();
-const save=()=>{localStorage.setItem("my_products",JSON.stringify(products));localStorage.setItem("my_cart",JSON.stringify(cart));localStorage.setItem("my_orders",JSON.stringify(orders));localStorage.setItem("my_users",JSON.stringify(users));localStorage.setItem("my_current",JSON.stringify(currentUser));};
+const save=()=>{localStorage.setItem("my_products",JSON.stringify(products));localStorage.setItem("my_cart",JSON.stringify(cart));localStorage.setItem("my_orders",JSON.stringify(orders));localStorage.setItem("my_users",JSON.stringify(users));localStorage.setItem("my_current",JSON.stringify(currentUser));localStorage.setItem("my_admins",JSON.stringify(admins));localStorage.setItem("my_current_admin",JSON.stringify(currentAdmin))};
 const toast=m=>{let t=document.getElementById("toast");t.textContent=m;t.classList.add("show");clearTimeout(window.tt);window.tt=setTimeout(()=>t.classList.remove("show"),2600)};
-function showPage(id){document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));document.getElementById(id).classList.add("active");if(id==="menu")renderMenu();if(id==="cart")renderCart();if(id==="orders")renderOrders();if(id==="account")renderAccount();if(id==="admin")renderAdmin();window.scrollTo({top:0,behavior:"smooth"})}
+
+function showPage(id){document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));document.getElementById(id).classList.add("active");if(id==="menu")renderMenu();if(id==="cart")renderCart();if(id==="orders")renderOrders();if(id==="account")renderAccount();if(id==="admin")renderAdmin();if(id==="admin-profile")renderAdminProfile()}
+
 function filterCat(cat,el){currentCat=cat;document.querySelectorAll(".chip").forEach(x=>x.classList.remove("active"));el.classList.add("active");renderMenu()}
-function renderMenu(){let q=(document.getElementById("search")?.value||"").toLowerCase();let list=products.filter(p=>(currentCat==="All"||p.cat===currentCat)&&(`${p.name} ${p.desc}`.toLowerCase().includes(q)));document.getElementById("productGrid").innerHTML=list.map(p=>`<article class="product"><img src="${p.image}" alt="${p.name}" onerror="this.src='https://images.unsplash.com/photo-1553530666-ba11a7da3888?auto=format&fit=crop&w=800&q=80'"><div class="product-body"><span class="tag">${p.cat}</span><h3>${p.name}</h3><p>${p.desc}</p><div class="price">${money(p.price)}</div><button class="add" onclick="addToCart(${p.id})">Add to order +</button></div></article>`).join("")||`<div class="empty">No drinks found.</div>`}
+
+function renderMenu(){let q=(document.getElementById("search")?.value||"").toLowerCase();let list=products.filter(p=>(currentCat==="All"||p.cat===currentCat)&&(`${p.name} ${p.desc}`.toLowerCase().includes(q)));document.getElementById("productGrid").innerHTML=list.map(p=>`<div class="product-card"><img src="${p.image}" alt="${p.name}"><h3>${p.name}</h3><p class="cat-tag">${p.cat}</p><p>${p.desc}</p><div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px"><strong>${money(p.price)}</strong><button class="btn small primary" onclick="addToCart(${p.id})">Add</button></div></div>`).join("")}
+
 function addToCart(id){let x=cart.find(i=>i.id===id);if(x)x.qty++;else cart.push({id,qty:1});save();updateCartCount();toast("Added to your order 🥭");}
+
 function updateCartCount(){document.getElementById("cartCount").textContent=cart.reduce((a,x)=>a+x.qty,0)}
-function renderCart(){let box=document.getElementById("cartItems");let empty=document.getElementById("cartEmpty");if(!cart.length){box.innerHTML="";empty.classList.remove("hidden");document.getElementById("cartTotal").textContent=money(0);return}empty.classList.add("hidden");let total=0;box.innerHTML=cart.map(i=>{let p=products.find(x=>x.id===i.id);if(!p)return "";total+=p.price*i.qty;return `<div class="cart-row"><img src="${p.image}"><div><b>${p.name}</b><div class="muted">${money(p.price)} each</div><div class="qty"><button onclick="changeQty(${p.id},-1)">−</button><span>${i.qty}</span><button onclick="changeQty(${p.id},1)">+</button></div></div><div><b>${money(p.price*i.qty)}</b><br><button class="remove" onclick="removeCart(${p.id})">Remove</button></div></div>`}).join("");document.getElementById("cartTotal").textContent=money(total);document.getElementById("loginHint").classList.toggle("hidden",!!currentUser);if(currentUser){document.getElementById("orderName").value=currentUser.name;document.getElementById("orderPhone").value=currentUser.phone}}
+
+function renderCart(){let box=document.getElementById("cartItems");let empty=document.getElementById("cartEmpty");if(!cart.length){box.innerHTML="";empty.classList.remove("hidden");document.getElementById("cartTotal").textContent=money(0);return}empty.classList.add("hidden");let total=0;box.innerHTML=cart.map(i=>{let p=products.find(x=>x.id===i.id);let st=p.price*i.qty;total+=st;return `<div class="cart-item"><div><b>${p.name}</b><br><small>${money(p.price)} × ${i.qty}</small></div><div class="qty-ctrl"><button onclick="changeQty(${p.id},-1)">−</button><span>${i.qty}</span><button onclick="changeQty(${p.id},1)">+</button></div><div><strong>${money(st)}</strong><button class="btn small ghost" onclick="removeCart(${p.id})">×</button></div></div>`}).join("");document.getElementById("cartTotal").textContent=money(total);document.getElementById("loginHint").classList.toggle("hidden",!!currentUser)}
+
 function changeQty(id,d){let x=cart.find(i=>i.id===id);if(!x)return;x.qty+=d;if(x.qty<=0)cart=cart.filter(i=>i.id!==id);save();renderCart();updateCartCount()}
+
 function removeCart(id){cart=cart.filter(i=>i.id!==id);save();renderCart();updateCartCount()}
-document.getElementById("payment").onchange=e=>{document.getElementById("lipanote").classList.toggle("hidden",e.target.value!=="Lipa Namba");document.getElementById("refWrap").classList.toggle("hidden",e.target.value!=="Lipa Namba")};
-function placeOrder(){if(!currentUser){toast("Please register or login first.");showPage("account");return}if(!cart.length){toast("Your cart is empty.");return}let location=document.getElementById("orderLocation").value.trim();if(!location){toast("Please enter your delivery location.");return}let payment=document.getElementById("payment").value;if(payment==="Lipa Namba"&&!document.getElementById("paymentRef").value.trim()){toast("Enter your payment reference.");return}let total=cart.reduce((s,i)=>s+(products.find(p=>p.id===i.id)?.price||0)*i.qty,0);let o={id:"MY"+Date.now().toString().slice(-8),userId:currentUser.id,customer:currentUser.name,phone:currentUser.phone,items:cart.map(i=>{let p=products.find(x=>x.id===i.id);return {name:p.name,qty:i.qty,price:p.price}}),total,location,note:document.getElementById("orderNote").value,payment,paymentRef:document.getElementById("paymentRef").value,status:"Received",driver:null,created:new Date().toISOString()};orders.unshift(o);cart=[];save();renderCart();updateCartCount();toast("Order received successfully 🎉");showPage("orders")}
-function renderOrders(){let list=orders.filter(o=>currentUser&&o.userId===currentUser.id);document.getElementById("ordersList").innerHTML=currentUser?(list.length?list.map(o=>orderCard(o,false)).join(""):`<div class="panel empty">No orders yet. Your next fresh drink is waiting 🥭</div>`):`<div class="panel empty">Login to see your orders.</div>`}
-function orderCard(o,adm){let items=o.items.map(i=>`${i.name} × ${i.qty}`).join(", ");return `<div class="order-card"><div style="display:flex;justify-content:space-between;gap:10px"><div><b>${o.id}</b><div class="muted">${new Date(o.created).toLocaleString()}</div></div><span class="status ${o.status.toLowerCase().replaceAll(" ","-")}">${o.status}</span></div><p><b>Items:</b> ${items}</p><p><b>Total:</b> ${money(o.total)} · <b>Payment:</b> ${o.payment}</p><p><b>Destination:</b> ${o.location}</p>${o.driver?`<div class="driver-box">🚚 <b>Driver assigned:</b> ${o.driver.name}<br>📞 ${o.driver.phone}</div>`:""}${adm?`<div class="order-actions"><select onchange="setStatus('${o.id}',this.value)"><option ${o.status==="Received"?"selected":""}>Received</option><option ${o.status==="Preparing"?"selected":""}>Preparing</option><option ${o.status==="Out for delivery"?"selected":""}>Out for delivery</option><option ${o.status==="Delivered"?"selected":""}>Delivered</option></select><input id="dn-${o.id}" placeholder="Driver name"><input id="dp-${o.id}" placeholder="Driver phone"><button class="btn small" onclick="assignDriver('${o.id}')">Assign driver</button><button class="btn small" onclick="notifyCustomer('${o.id}')">WhatsApp customer</button></div>`:""}</div>`}
-function authTab(mode,el){document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));el.classList.add("active");let reg=mode==="register";document.getElementById("confirmWrap").classList.toggle("hidden",!reg);document.getElementById("authName").required=reg;document.getElementById("accountTitle").textContent=reg?"Create your Mr. Yoghurt account":"Welcome back";document.getElementById("authSubmit").textContent=reg?"Create account":"Login";document.getElementById("authForm").dataset.mode=mode}
+
+document.getElementById("payment").onchange=e=>{document.getElementById("lipanote").classList.toggle("hidden",e.target.value!=="Lipa Namba");document.getElementById("refWrap").classList.toggle("hidden",e.target.value!=="Lipa Namba")}
+
+function placeOrder(){if(!currentUser){toast("Please register or login first.");showPage("account");return}if(!cart.length){toast("Your cart is empty.");return}let location=document.getElementById("orderLocation").value.trim(),note=document.getElementById("orderNote").value.trim(),payment=document.getElementById("payment").value;if(!location){toast("Please enter delivery location.");return}let ref=document.getElementById("paymentRef").value.trim();if(payment==="Lipa Namba"&&!ref){toast("Please enter payment reference.");return}let items=cart.map(i=>{let p=products.find(x=>x.id===i.id);return{id:p.id,name:p.name,qty:i.qty,price:p.price}});let total=items.reduce((a,x)=>a+x.price*x.qty,0);let ord={id:Date.now(),userId:currentUser.id,userName:currentUser.name,userPhone:currentUser.phone,items,location,note,payment,ref,total,status:"Pending",driver:null,date:new Date().toLocaleString()};orders.push(ord);cart=[];save();renderCart();updateCartCount();toast("Order placed! 🎉");document.getElementById("orderLocation").value="";document.getElementById("orderNote").value="";document.getElementById("paymentRef").value="";showPage("orders")}
+
+function renderOrders(){let list=orders.filter(o=>currentUser&&o.userId===currentUser.id);document.getElementById("ordersList").innerHTML=currentUser?(list.length?list.map(o=>orderCard(o,false)).join(""):' <div class="empty">No orders yet. Order something fresh!</div>'):"<div class='empty'>Login to see your orders.</div>"}
+
+function orderCard(o,adm){let items=o.items.map(i=>`${i.name} × ${i.qty}`).join(", ");return `<div class="order-card"><div style="display:flex;justify-content:space-between;gap:10px"><div><b>Order #${o.id}</b><br><small>${o.date}</small><br><small>${items}</small></div><div><span class="status ${o.status.toLowerCase()}">${o.status}</span></div></div><div style="margin-top:10px;font-size:14px"><b>${money(o.total)}</b><br>📍 ${o.location}<br>💳 ${o.payment}${o.ref?" ("+o.ref+")":""}<br>📝 ${o.note||"No notes"}<br>${o.driver?`🚗 ${o.driver.name} ${o.driver.phone}`:"No driver assigned"}</div>${adm?`<div style="margin-top:10px;display:flex;gap:5px"><button class="btn small" onclick="setStatus(${o.id},'Confirmed')">Confirm</button><button class="btn small" onclick="setStatus(${o.id},'Ready')">Ready</button><button class="btn small" onclick="setStatus(${o.id},'Delivered')">Delivered</button><button class="btn small ghost" onclick="showDriverForm(${o.id})">Assign driver</button><button class="btn small primary" onclick="printOrder(${o.id})">🖨️ Print</button></div><div id="dform-${o.id}" class="hidden" style="margin-top:10px"><input id="dn-${o.id}" placeholder="Driver name"><input id="dp-${o.id}" placeholder="Driver phone"><button class="btn small" onclick="assignDriver(${o.id})">Save driver</button></div>`:"<button class='btn small primary' onclick=\"printOrder(${o.id})\">🖨️ Print order</button>"}</div>`}
+
+function authTab(mode,el){document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));el.classList.add("active");let reg=mode==="register";document.getElementById("confirmWrap").classList.toggle("hidden",!reg);document.getElementById("accountTitle").textContent=reg?"Create new account":"Login to your account";document.getElementById("authForm").dataset.mode=mode;document.getElementById("authSubmit").textContent=reg?"Register":"Login";if(reg){document.getElementById("authName").focus();document.getElementById("authName").required=true}else{document.getElementById("authEmail").required=false;document.getElementById("authPass").focus()}}
+
 document.getElementById("authForm").dataset.mode="login";
-function handleAuth(e){e.preventDefault();let mode=e.target.dataset.mode,name=authName.value.trim(),phone=authPhone.value.trim(),email=authEmail.value.trim(),pass=authPass.value;if(mode==="register"){if(pass!==authConfirm.value){toast("Passwords do not match.");return}if(users.some(u=>u.phone===phone)){toast("This phone is already registered.");return}let u={id:"U"+Date.now(),name,phone,email,password:pass};users.push(u);currentUser=u;toast("Account created successfully 🎉")}else{let u=users.find(x=>x.phone===phone&&x.password===pass);if(!u){toast("Invalid phone or password.");return}currentUser=u;toast("Welcome back, "+u.name+" 👋")}save();renderAccount();renderCart();showPage("menu")}
-function renderAccount(){document.getElementById("profileName").textContent=currentUser?.name||"Not logged in";document.getElementById("profilePhone").textContent=currentUser?currentUser.phone:"Create/login to manage orders.";document.getElementById("avatar").textContent=currentUser?.name?.[0]?.toUpperCase()||"?";}
+
+function handleAuth(e){e.preventDefault();let mode=e.target.dataset.mode,name=authName.value.trim(),phone=authPhone.value.trim(),email=authEmail.value.trim(),pass=authPass.value;if(mode==="register"){if(!name||!phone||!email||!pass){toast("All fields required.");return}if(users.find(u=>u.email===email)){toast("Email already registered.");return}if(authPass.value!==authConfirm.value){toast("Passwords don't match.");return}let newUser={id:Date.now(),name,phone,email,pass,createdAt:new Date().toLocaleString()};users.push(newUser);currentUser=newUser;save();renderAccount();toast("Account created! 🎉");document.getElementById("authForm").reset();authTab("login",document.querySelector("[onclick=\"authTab('login',this)\"]"))}else{let u=users.find(x=>x.email===email&&x.pass===pass);if(u){currentUser=u;save();renderAccount();toast("Logged in!");document.getElementById("authForm").reset();authTab("login",document.querySelector("[onclick=\"authTab('login',this)\"]"))}else{toast("Invalid email or password.")}}}
+
+function renderAccount(){document.getElementById("profileName").textContent=currentUser?.name||"Not logged in";document.getElementById("profilePhone").textContent=currentUser?currentUser.phone:"Create/login to manage orders.";if(currentUser){document.getElementById("avatar").textContent=currentUser.name.charAt(0).toUpperCase();document.getElementById("profileEmail").textContent=currentUser.email;document.getElementById("profileJoined").textContent=currentUser.createdAt}else{document.getElementById("profileEmail").textContent="";document.getElementById("profileJoined").textContent=""}}
+
 function logout(){currentUser=null;save();renderAccount();toast("Logged out.");showPage("home")}
-function adminLogin(){if(adminUser.value==="admin"&&adminPass.value==="MrYoghurt@2026"){admin=true;renderAdmin();toast("Admin dashboard unlocked.");}else toast("Wrong admin credentials.");}
-function adminLogout(){admin=false;renderAdmin()}
-function renderAdmin(){document.getElementById("adminLogin").classList.toggle("hidden",admin);document.getElementById("adminDash").classList.toggle("hidden",!admin);if(!admin)return;document.getElementById("statOrders").textContent=orders.length;document.getElementById("statCustomers").textContent=users.length;document.getElementById("statSales").textContent=money(orders.reduce((s,o)=>s+o.total,0));document.getElementById("statProducts").textContent=products.length;document.getElementById("adminProducts").innerHTML=products.map(p=>`<div class="admin-item"><img src="${p.image}"><div><b>${p.name}</b><small class="muted">${p.cat} · ${money(p.price)}</small></div><div><button class="btn small" onclick="editProduct(${p.id})">Edit</button><button class="btn small" onclick="deleteProduct(${p.id})">Delete</button></div></div>`).join("");document.getElementById("adminOrders").innerHTML=orders.length?orders.map(o=>orderCard(o,true)).join(""):`<div class="empty">No orders yet.</div>`}
-function saveProduct(){let id=editId.value?Number(editId.value):Date.now();let p={id,name:pName.value.trim(),cat:pCat.value,price:Number(pPrice.value),image:pImage.value.trim()||"https://images.unsplash.com/photo-1553530666-ba11a7da3888?auto=format&fit=crop&w=800&q=80",desc:pDesc.value.trim()||"Freshly prepared by Mr. Yoghurt."};if(!p.name||!p.price){toast("Name and price are required.");return}let idx=products.findIndex(x=>x.id===id);if(idx>=0)products[idx]=p;else products.push(p);save();clearProductForm();renderAdmin();renderMenu();toast("Drink saved.");}
+
+// ===== ADMIN SECTION =====
+function adminLogin(){let user=adminUser.value.trim(),pass=adminPass.value;if(user==="admin"&&pass==="MrYoghurt@2026"){admin=true;currentAdmin={name:"Admin",email:"admin@mryoghurt.com",role:"System Admin",loginTime:new Date().toLocaleString()};save();renderAdmin();toast("Admin dashboard unlocked.");}else toast("Wrong admin credentials.")}
+
+function adminLogout(){admin=false;currentAdmin=null;save();renderAdmin();toast("Logged out of admin.")}
+
+function renderAdmin(){document.getElementById("adminLogin").classList.toggle("hidden",admin);document.getElementById("adminDash").classList.toggle("hidden",!admin);if(!admin)return;document.getElementById("statOrders").textContent=orders.length;document.getElementById("statCustomers").textContent=users.length;document.getElementById("statSales").textContent=money(orders.reduce((a,x)=>a+x.total,0));renderAdminOrders();renderAdminProducts()}
+
+function renderAdminProfile(){if(!currentAdmin){showPage("admin");return}document.getElementById("adminProfileName").textContent=currentAdmin.name;document.getElementById("adminProfileEmail").textContent=currentAdmin.email;document.getElementById("adminProfileRole").textContent=currentAdmin.role;document.getElementById("adminProfileLogin").textContent=currentAdmin.loginTime}
+
+function saveProduct(){let id=editId.value?Number(editId.value):Date.now();let p={id,name:pName.value.trim(),cat:pCat.value,price:Number(pPrice.value),image:pImage.value.trim()||"https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=800&q=80",desc:pDesc.value.trim()};let idx=products.findIndex(x=>x.id===id);if(idx>-1)products[idx]=p;else products.push(p);save();clearProductForm();renderAdmin();renderMenu();toast("Drink saved!")}
+
+function renderAdminProducts(){let html=products.map(p=>`<div style="padding:10px;border:1px solid #ddd;margin:8px 0;border-radius:6px;display:flex;justify-content:space-between;align-items:center"><div><b>${p.name}</b><br><small>${p.cat} • ${money(p.price)}</small></div><div style="display:flex;gap:5px"><button class="btn small" onclick="editProduct(${p.id})">Edit</button><button class="btn small ghost" onclick="deleteProduct(${p.id})">Delete</button></div></div>`).join("");document.getElementById("adminProducts").innerHTML=html}
+
 function editProduct(id){let p=products.find(x=>x.id===id);editId.value=p.id;pName.value=p.name;pCat.value=p.cat;pPrice.value=p.price;pImage.value=p.image;pDesc.value=p.desc;window.scrollTo({top:0,behavior:"smooth"})}
+
 function clearProductForm(){editId.value="";pName.value="";pPrice.value="";pImage.value="";pDesc.value=""}
+
 function deleteProduct(id){if(confirm("Delete this drink?")){products=products.filter(p=>p.id!==id);save();renderAdmin();renderMenu();toast("Drink deleted.")}}
-function setStatus(id,status){let o=orders.find(x=>x.id===id);if(o){o.status=status;save();renderAdmin();toast("Order updated.");}}
-function assignDriver(id){let o=orders.find(x=>x.id===id),name=document.getElementById("dn-"+id).value.trim(),phone=document.getElementById("dp-"+id).value.trim();if(!name||!phone){toast("Enter driver name and phone.");return}o.driver={name,phone};o.status="Out for delivery";save();renderAdmin();toast("Driver assigned and customer can see the details.")}
-function notifyCustomer(id){let o=orders.find(x=>x.id===id);if(!o)return;let text=`Mr. Yoghurt order ${o.id}: your order has been ${o.status}.${o.driver?` Driver: ${o.driver.name}, ${o.driver.phone}.`:""} Total: ${money(o.total)}.`;window.open("https://wa.me/"+o.phone.replace(/\D/g,"")+"?text="+encodeURIComponent(text),"_blank")}
-function exportOrders(){let blob=new Blob([JSON.stringify(orders,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="mr-yoghurt-orders.json";a.click();URL.revokeObjectURL(a.href)}
-function whatsappOrder(){let items=cart.map(i=>{let p=products.find(x=>x.id===i.id);return `${p.name} x${i.qty}`}).join(", ");let msg=`Hello Mr. Yoghurt, I want to order: ${items||"a drink"}. Please assist me.`;window.open("https://wa.me/255676475401?text="+encodeURIComponent(msg),"_blank")}
+
+function renderAdminOrders(){let html=orders.length?orders.map(o=>`<tr><td>${o.id}</td><td>${o.userName}</td><td>${o.items.map(i=>i.name).join(", ")}</td><td>${money(o.total)}</td><td>${o.status}</td><td>${o.date}</td><td style="display:flex;gap:5px"><button class="btn small" onclick="setStatus(${o.id},'Confirmed')">Confirm</button><button class="btn small" onclick="setStatus(${o.id},'Ready')">Ready</button><button class="btn small" onclick="setStatus(${o.id},'Delivered')">Done</button><button class="btn small ghost" onclick="showDriverForm(${o.id})">Driver</button><button class="btn small primary" onclick="printOrder(${o.id})">🖨️ Print</button></td></tr>`).join(""):"<tr><td colspan='7' style='text-align:center'>No orders yet</td></tr>";document.getElementById("adminOrders").innerHTML=`<table class="orders-table"><tr><th>Order ID</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th><th>Date</th><th>Actions</th></tr>${html}</table>`}
+
+function setStatus(id,status){let o=orders.find(x=>x.id===id);if(o){o.status=status;save();renderAdmin();renderOrders();toast("Order updated to: "+status)}}
+
+function showDriverForm(id){document.getElementById("dform-"+id).classList.toggle("hidden")}
+
+function assignDriver(id){let o=orders.find(x=>x.id===id),name=document.getElementById("dn-"+id).value.trim(),phone=document.getElementById("dp-"+id).value.trim();if(!name||!phone){toast("Enter driver details.");return}o.driver={name,phone};save();renderAdmin();renderOrders();toast("Driver assigned!");showDriverForm(id)}
+
+function notifyCustomer(id){let o=orders.find(x=>x.id===id);if(!o)return;let text=`Mr. Yoghurt order ${o.id}: your order has been ${o.status}.${o.driver?` Driver: ${o.driver.name}, ${o.driver.phone}`:""} Thank you!`;let url=`https://wa.me/?text=${encodeURIComponent(text)}`;window.open(url)}
+
+function exportOrders(){let blob=new Blob([JSON.stringify(orders,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="mr-yoghurt-orders.json";a.click()}
+
+// ===== PRINT ORDER FUNCTION =====
+function printOrder(orderId){let order=orders.find(o=>o.id===orderId);if(!order){toast("Order not found.");return}let printWindow=window.open('','','height=600,width=700');let itemsHtml=order.items.map(i=>`<tr><td>${i.name}</td><td align="center">${i.qty}</td><td align="right">TZS ${i.price.toLocaleString()}</td><td align="right">TZS ${(i.price*i.qty).toLocaleString()}</td></tr>`).join("");let html=`
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Order #${order.id}</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 20px; max-width: 800px; }
+  .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 10px; }
+  .header h1 { margin: 0; color: #101510; }
+  .header p { margin: 5px 0; color: #666; }
+  .order-info { margin: 20px 0; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .info-block { padding: 10px; background: #f5f5f5; border-radius: 6px; }
+  .info-block b { display: block; color: #666; font-size: 12px; margin-bottom: 5px; }
+  table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+  th { background: #101510; color: white; padding: 10px; text-align: left; font-weight: bold; }
+  td { padding: 10px; border-bottom: 1px solid #ddd; }
+  tr:last-child td { border-bottom: 2px solid #333; }
+  .total-row { font-size: 18px; font-weight: bold; text-align: right; }
+  .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 12px; }
+  .status { font-size: 16px; font-weight: bold; color: #28a745; }
+  @media print { body { margin: 0; } }
+</style>
+</head>
+<body>
+  <div class="header">
+    <h1>🥝 Mr. Yoghurt</h1>
+    <p>Fresh • Healthy • Delivered</p>
+    <p>Order Receipt</p>
+  </div>
+
+  <div class="order-info">
+    <div class="info-block">
+      <b>Order ID</b>
+      ${order.id}
+      <b style="margin-top:10px">Date</b>
+      ${order.date}
+      <b style="margin-top:10px">Status</b>
+      <span class="status">${order.status}</span>
+    </div>
+    <div class="info-block">
+      <b>Customer Name</b>
+      ${order.userName}
+      <b style="margin-top:10px">Phone</b>
+      ${order.userPhone}
+      <b style="margin-top:10px">Payment Method</b>
+      ${order.payment}
+    </div>
+  </div>
+
+  <div class="order-info">
+    <div class="info-block">
+      <b>Delivery Location</b>
+      ${order.location}
+    </div>
+    <div class="info-block">
+      <b>Special Instructions</b>
+      ${order.note||"None"}
+    </div>
+  </div>
+
+  ${order.driver?`
+  <div class="order-info">
+    <div class="info-block">
+      <b>Driver Name</b>
+      ${order.driver.name}
+      <b style="margin-top:10px">Driver Phone</b>
+      ${order.driver.phone}
+    </div>
+  </div>
+  `:""}
+
+  <table>
+    <tr>
+      <th>Item</th>
+      <th style="width:80px;text-align:center">Qty</th>
+      <th style="width:100px;text-align:right">Unit Price</th>
+      <th style="width:120px;text-align:right">Total</th>
+    </tr>
+    ${itemsHtml}
+    <tr class="total-row">
+      <td colspan="3" style="text-align:right">Grand Total:</td>
+      <td style="text-align:right">TZS ${order.total.toLocaleString()}</td>
+    </tr>
+  </table>
+
+  <div class="footer">
+    <p>Thank you for your order! 🎉</p>
+    <p>Customer Service: 0697983933 | Orders: 0676475401</p>
+    <p style="margin-top:20px">Printed on: ${new Date().toLocaleString()}</p>
+  </div>
+
+  <script>
+    window.print();
+    window.onafterprint = function() { window.close(); };
+  </script>
+</body>
+</html>
+  `;printWindow.document.write(html);printWindow.document.close()}
+
+function whatsappOrder(){let items=cart.map(i=>{let p=products.find(x=>x.id===i.id);return `${p.name} x${i.qty}`}).join(", ");let msg=`Hello Mr. Yoghurt, I want to order: ${items||"a drink"}. Please confirm delivery to [location]. Thank you!`;let url=`https://wa.me/255697983933?text=${encodeURIComponent(msg)}`;window.open(url)}
+
 function openAssistant(){document.getElementById("assistant").classList.remove("hidden")}
+
 function closeAssistant(){document.getElementById("assistant").classList.add("hidden")}
-function sendChat(){let input=document.getElementById("chatInput"),q=input.value.trim();if(!q)return;let log=document.getElementById("chatLog");log.innerHTML+=`<div class="user-msg">${q}</div>`;let l=q.toLowerCase(),reply;if(l.includes("detox"))reply="Try our Green Detox or Pineapple Detox. If you want a lighter option, ask for a recommendation based on your goal.";else if(l.includes("smooth"))reply="Our Tropical Smoothie and Berry Power Smoothie are creamy, fruity choices.";else if(l.includes("yoghurt")||l.includes("yogurt"))reply="Strawberry Yoghurt is a customer-friendly favourite; Vanilla Yoghurt Cup is a milder option.";else if(l.includes("price")||l.includes("bei"))reply="You can see live prices on the Menu. Admin can update prices anytime.";else if(l.includes("delivery")||l.includes("location"))reply="Add your destination in Checkout. The admin can assign a driver and the driver name/phone will appear in your order tracking.";else if(l.includes("payment")||l.includes("lipa"))reply="Choose Lipa Namba at Checkout and enter your payment transaction reference. For a real online payment gateway, connect a server-side payment provider before production.";else if(l.includes("human")||l.includes("help")||l.includes("customer"))reply="Customer service: 0697983933. Orders/WhatsApp: 0676475401.";else reply="I can help with juices, yoghurt, detox, smoothies, prices, delivery, payments and order tracking. What would you like?";setTimeout(()=>{log.innerHTML+=`<div class="bot">${reply}</div>`;log.scrollTop=log.scrollHeight},250);input.value=""}
+
+function sendChat(){let input=document.getElementById("chatInput"),q=input.value.trim();if(!q)return;let log=document.getElementById("chatLog");log.innerHTML+=`<div class="user-msg">${q}</div>`;let resp="I can help you with drink suggestions, orders, or connecting to support. What would you like?";if(q.toLowerCase().includes("juice")||q.toLowerCase().includes("smoothie"))resp="Our Juices and Smoothies are fresh and delicious! Check the menu for options like Mango Passion, Tropical Smoothie, and more.";else if(q.toLowerCase().includes("delivery")||q.toLowerCase().includes("how"))resp="We deliver fresh to your door! Add items to cart, enter your location, and choose payment. It's that easy!";else if(q.toLowerCase().includes("contact")||q.toLowerCase().includes("support"))resp="Call/WhatsApp: 0697983933 or 0676475401. We're here to help!";log.innerHTML+=`<div class="bot">${resp}</div>`;log.scrollTop=log.scrollHeight;input.value=""}
+
 renderMenu();renderCart();renderAccount();updateCartCount();
