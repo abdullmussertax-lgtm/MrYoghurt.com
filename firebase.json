@@ -3,33 +3,25 @@
     "public": ".",
     "ignore": [
       "firebase.json",
-      "firestore.rules",
-      "README.txt",
-      "*.log"
+      "**/.*",
+      "**/node_modules/**"
     ],
-    "cleanUrls": true,
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ],
     "headers": [
       {
-        "source": "**/*.@(js|css|webmanifest)",
+        "source": "**",
         "headers": [
           {
             "key": "Cache-Control",
-            "value": "public,max-age=3600"
-          }
-        ]
-      },
-      {
-        "source": "**/*.@(jpg|jpeg|png|webp|svg)",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "public,max-age=86400"
+            "value": "public, max-age=3600"
           }
         ]
       }
     ]
-  },
-  "firestore": {
-    "rules": "firestore.rules"
   }
 }
