@@ -158,24 +158,20 @@ function getAIResponse(text,lang="en"){
   const intent=detectIntent(text);
   const lowerText=text.toLowerCase();
   
-  // Menu-related
   if(intent==="menu"){
     return t.products+" "+products.map(p=>`${p.name} (${t[p.cat.toLowerCase()].toLowerCase()}) - ${t.price}${p.price} TZS`).join(", ");
   }
   
-  // Specific category searches
   if(intent==="juice"||intent==="yoghurt"||intent==="detox"||intent==="smoothie"){
     let catItems=products.filter(p=>p.cat.toLowerCase()===intent);
     return t.products+" "+catItems.map(p=>`${p.name} - ${p.desc} (${t.price}${p.price} TZS)`).join(", ");
   }
   
-  // Price inquiries
   if(intent==="price"){
     let priceInfo=products.map(p=>`${p.name}: ${p.price} TZS`).join(", ");
     return `Our prices: ${priceInfo}`;
   }
   
-  // Order/Cart
   if(intent==="order"){
     if(cart.length===0){
       return "Your cart is empty. Go to our menu and add some fresh drinks!";
@@ -187,17 +183,14 @@ function getAIResponse(text,lang="en"){
     return `Your current order: ${items}. Go to Cart page to checkout!`;
   }
   
-  // Delivery
   if(intent==="delivery"){
     return t.delivery;
   }
   
-  // Payment
   if(intent==="payment"){
     return t.payment;
   }
   
-  // Account/Orders
   if(intent==="account"||intent==="status"){
     if(!currentUser){
       return t.orders;
@@ -210,34 +203,78 @@ function getAIResponse(text,lang="en"){
     return `Hi ${currentUser.name}! Your latest order (#${lastOrder.id}) status: ${lastOrder.status}`;
   }
   
-  // Ingredients
   if(intent==="ingredients"){
     return t.ingredients;
   }
   
-  // Healthy
   if(intent==="healthy"){
     return t.healthy;
   }
   
-  // Recommendations
   if(intent==="recommend"){
     return t.recommendation;
   }
   
-  // Help
   if(intent==="help"||intent==="hours"){
     return t.support;
   }
   
-  // Search for product by name
   let matchedProduct=products.find(p=>lowerText.includes(p.name.toLowerCase()));
   if(matchedProduct){
     return `${matchedProduct.name} - ${matchedProduct.desc}. ${t.price}${matchedProduct.price} TZS. Available in our menu!`;
   }
   
-  // Default fallback
   return t.notFound+" "+t.thank;
+}
+
+// Modern Business Features
+function toggleMobileMenu(){
+  let nav=document.querySelector('nav');
+  nav.classList.toggle('mobile-open');
+}
+
+function quickSearchDrinks(){
+  let query=document.getElementById("quickSearch").value.toLowerCase();
+  if(!query) return;
+  currentCat="All";
+  document.getElementById("search").value=query;
+  renderMenu();
+  showPage('menu');
+}
+
+function subscribeNewsletter(){
+  let email=document.getElementById("newsletterEmail").value.trim();
+  if(!email||!email.includes('@')){
+    toast("Please enter a valid email.");
+    return;
+  }
+  localStorage.setItem("newsletter_subscribers",(localStorage.getItem("newsletter_subscribers")||"")+email+",");
+  toast("✓ Subscribed! Check your email for exclusive offers.");
+  document.getElementById("newsletterEmail").value="";
+}
+
+function renderCart(){
+  let box=document.getElementById("cartItems");
+  let empty=document.getElementById("cartEmpty");
+  if(!cart.length){
+    box.innerHTML="";
+    empty.classList.remove("hidden");
+    document.getElementById("cartTotal").textContent=money(0);
+    document.getElementById("subtotal").textContent=money(0);
+    return;
+  }
+  empty.classList.add("hidden");
+  let total=0;
+  let subtotal=0;
+  box.innerHTML=cart.map(c=>{
+    let p=products.find(x=>x.id===c.id);
+    let cost=p.price*c.qty;
+    subtotal+=cost;
+    return `<div class="cart-item"><div><b>${p.name}</b></div><div class="qty-ctrl"><button onclick="changeQty(${p.id},-1)">−</button><span>${c.qty}</span><button onclick="changeQty(${p.id},1)">+</button></div><div><strong>${money(cost)}</strong> <button class="rm-btn" onclick="removeCart(${p.id})">✕</button></div></div>`}).join("");
+  let deliveryFee=2000;
+  total=subtotal+deliveryFee;
+  document.getElementById("subtotal").textContent=money(subtotal);
+  document.getElementById("cartTotal").textContent=money(total);
 }
 
 const money=n=>"TZS "+Number(n).toLocaleString();
@@ -248,13 +285,11 @@ function showPage(id){document.querySelectorAll(".page").forEach(x=>x.classList.
 
 function filterCat(cat,el){currentCat=cat;document.querySelectorAll(".chip").forEach(x=>x.classList.remove("active"));el.classList.add("active");renderMenu()}
 
-function renderMenu(){let q=(document.getElementById("search")?.value||"").toLowerCase();let list=products.filter(p=>(currentCat==="All"||p.cat===currentCat)&&(`${p.name} ${p.desc}`.toLowerCase().includes(q)));document.getElementById("productGrid").innerHTML=list.map(p=>`<div class="product-card"><img src="${p.image}" alt="${p.name}"><h3>${p.name}</h3><p>${p.desc}</p><div class="card-foot"><strong>${money(p.price)}</strong><button class="btn small" onclick="addToCart(${p.id})">Add →</button></div></div>`).join("")}
+function renderMenu(){let q=(document.getElementById("search")?.value||"").toLowerCase();let list=products.filter(p=>(currentCat==="All"||p.cat===currentCat)&&(`${p.name} ${p.desc}`.toLowerCase().includes(q)));document.getElementById("productGrid").innerHTML=list.map(p=>`<div class="product-card"><img src="${p.image}" alt="${p.name}" loading="lazy"><h3>${p.name}</h3><p>${p.desc}</p><div class="card-foot"><strong>${money(p.price)}</strong><button class="btn small" onclick="addToCart(${p.id})">Add →</button></div></div>`).join("")}
 
 function addToCart(id){let x=cart.find(i=>i.id===id);if(x)x.qty++;else cart.push({id,qty:1});save();updateCartCount();toast("Added to your order 🥭");}
 
 function updateCartCount(){document.getElementById("cartCount").textContent=cart.reduce((a,x)=>a+x.qty,0)}
-
-function renderCart(){let box=document.getElementById("cartItems");let empty=document.getElementById("cartEmpty");if(!cart.length){box.innerHTML="";empty.classList.remove("hidden");document.getElementById("cartTotal").textContent=money(0);return}empty.classList.add("hidden");let total=0;box.innerHTML=cart.map(c=>{let p=products.find(x=>x.id===c.id),cost=p.price*c.qty;total+=cost;return `<div class="cart-item"><div><b>${p.name}</b></div><div class="qty-ctrl"><button onclick="changeQty(${p.id},-1)">−</button><span>${c.qty}</span><button onclick="changeQty(${p.id},1)">+</button></div><div><strong>${money(cost)}</strong> <button class="rm-btn" onclick="removeCart(${p.id})">✕</button></div></div>`}).join("");document.getElementById("cartTotal").textContent=money(total)}
 
 function changeQty(id,d){let x=cart.find(i=>i.id===id);if(!x)return;x.qty+=d;if(x.qty<=0)cart=cart.filter(i=>i.id!==id);save();renderCart();updateCartCount()}
 
@@ -262,7 +297,7 @@ function removeCart(id){cart=cart.filter(i=>i.id!==id);save();renderCart();updat
 
 document.getElementById("payment").onchange=e=>{document.getElementById("lipanote").classList.toggle("hidden",e.target.value!=="Lipa Namba");document.getElementById("refWrap").classList.toggle("hidden",e.target.value!=="Lipa Namba")};
 
-function placeOrder(){if(!currentUser){toast("Please register or login first.");showPage("account");return}if(!cart.length){toast("Your cart is empty.");return}let location=document.getElementById("orderLocation").value.trim(),name=document.getElementById("orderName").value.trim(),phone=document.getElementById("orderPhone").value.trim(),note=document.getElementById("orderNote").value.trim(),payment=document.getElementById("payment").value,paymentRef=document.getElementById("paymentRef").value.trim();if(!location||!phone){toast("Enter location and phone.");return}if(payment==="Lipa Namba"&&!paymentRef){toast("Enter payment reference.");return}let items=cart.map(c=>{let p=products.find(x=>x.id===c.id);return{id:c.id,name:p.name,qty:c.qty,price:p.price}}),total=items.reduce((a,x)=>a+x.price*x.qty,0),o={id:Date.now(),userId:currentUser.id,userName:name,userPhone:phone,userEmail:currentUser.email,items,location,note,payment,paymentRef,total,status:"Pending",date:new Date().toLocaleString(),driver:null};orders.push(o);cart=[];save();renderCart();renderOrders();toast("Order placed! Track it in My Orders. 🎉");showPage("orders")}
+function placeOrder(){if(!currentUser){toast("Please register or login first.");showPage("account");return}if(!cart.length){toast("Your cart is empty.");return}let location=document.getElementById("orderLocation").value.trim(),name=document.getElementById("orderName").value.trim(),phone=document.getElementById("orderPhone").value.trim(),note=document.getElementById("orderNote").value.trim(),payment=document.getElementById("payment").value,paymentRef=document.getElementById("paymentRef").value.trim();if(!location||!phone){toast("Enter location and phone.");return}if(payment==="Lipa Namba"&&!paymentRef){toast("Enter payment reference.");return}let items=cart.map(c=>{let p=products.find(x=>x.id===c.id);return{id:c.id,name:p.name,qty:c.qty,price:p.price}}),subtotal=items.reduce((a,x)=>a+x.price*x.qty,0),deliveryFee=2000,total=subtotal+deliveryFee,o={id:Date.now(),userId:currentUser.id,userName:name,userPhone:phone,userEmail:currentUser.email,items,location,note,payment,paymentRef,subtotal,deliveryFee,total,status:"Pending",date:new Date().toLocaleString(),driver:null};orders.push(o);cart=[];save();renderCart();renderOrders();toast("Order placed! Track it in My Orders. 🎉");showPage("orders")}
 
 function renderOrders(){let list=orders.filter(o=>currentUser&&o.userId===currentUser.id);document.getElementById("ordersList").innerHTML=currentUser?(list.length?list.map(o=>orderCard(o,false)).join(""):` <div class="empty">No orders yet. <a href="#" onclick="showPage('menu')">Start ordering!</a></div>`):` <div class="notice">Login to see your orders.</div>`}
 
@@ -392,6 +427,14 @@ function printOrder(orderId){let order=orders.find(o=>o.id===orderId);if(!order)
     </tr>
     ${itemsHtml}
     <tr class="total-row">
+      <td colspan="3" style="text-align:right">Subtotal:</td>
+      <td style="text-align:right">${money(order.subtotal)}</td>
+    </tr>
+    <tr class="total-row">
+      <td colspan="3" style="text-align:right">Delivery Fee:</td>
+      <td style="text-align:right">${money(order.deliveryFee)}</td>
+    </tr>
+    <tr class="total-row">
       <td colspan="3" style="text-align:right">Grand Total:</td>
       <td style="text-align:right">${money(order.total)}</td>
     </tr>
@@ -421,4 +464,34 @@ function changeAILanguage(){let lang=document.getElementById("aiLanguage").value
 
 function sendChat(){let input=document.getElementById("chatInput"),q=input.value.trim();if(!q)return;let log=document.getElementById("chatLog");log.innerHTML+=`<div class="user-msg">${q}</div>`;let response=getAIResponse(q,currentAILang);log.innerHTML+=`<div class="bot">${response}</div>`;input.value="";log.scrollTop=log.scrollHeight}
 
+// Initialize with modern features
 renderMenu();renderCart();renderAccount();updateCartCount();
+
+// SEO Schema Markup
+const schemaMarkup={
+  "@context":"https://schema.org/",
+  "@type":"LocalBusiness",
+  "name":"Mr. Yoghurt",
+  "image":"https://images.unsplash.com/photo-1610970881699-44a5587cabec?auto=format&fit=crop&w=1200&q=85",
+  "description":"Fresh juices, yoghurt, detox and smoothies delivered to you in Tanzania",
+  "address":{
+    "@type":"PostalAddress",
+    "streetAddress":"Various delivery zones",
+    "addressLocality":"Tanzania"
+  },
+  "telephone":"+255697983933",
+  "email":"info@mryoghurt.tz",
+  "url":"https://mryoghurt-tz.web.app",
+  "priceRange":"TZS 4,500 - 7,500",
+  "areaServed":"Tanzania"
+};
+
+// Analytics tracking for business insights
+function trackEvent(eventName,eventData){
+  let events=JSON.parse(localStorage.getItem("analytics_events")||"[]");
+  events.push({event:eventName,data:eventData,timestamp:new Date().toLocaleString()});
+  localStorage.setItem("analytics_events",JSON.stringify(events.slice(-100)));
+}
+
+// Track page views
+trackEvent("page_view",{page:document.location.pathname});
