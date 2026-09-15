@@ -1,0 +1,10 @@
+{
+  "name": "Mr. Yoghurt",
+  "short_name": "Mr Yoghurt",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#101510",
+  "theme_color": "#8fdd45",
+  "description": "Fresh juices, yoghurt, detox and smoothies.",
+  "icons": []
+}

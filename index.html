@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101510">
+<meta name="description" content="Mr. Yoghurt — Fresh juices, yoghurt, detox and smoothies delivered to you.">
+<title>Mr. Yoghurt | Fresh. Healthy. Delivered.</title>
+<link rel="preconnect" href="https://images.unsplash.com">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="toast" class="toast"></div>
+
+<header class="topbar">
+  <div class="brand" onclick="showPage('home')">
+    <div class="logo">MY</div>
+    <div><strong>Mr. Yoghurt</strong><small>Fresh • Healthy • Delivered</small></div>
+  </div>
+  <nav>
+    <button onclick="showPage('home')">Home</button>
+    <button onclick="showPage('menu')">Menu</button>
+    <button onclick="showPage('orders')">My Orders</button>
+    <button onclick="showPage('account')">Account</button>
+    <button class="cart-btn" onclick="showPage('cart')">🛒 <span id="cartCount">0</span></button>
+    <button class="admin-nav" onclick="showPage('admin')">Admin</button>
+  </nav>
+</header>
+
+<main>
+<section id="home" class="page active">
+  <div class="hero">
+    <div class="hero-copy">
+      <span class="pill">🥝 100% fresh-made</span>
+      <h1>Fresh energy.<br><span>Delivered.</span></h1>
+      <p>Juices, yoghurt, detox blends and smoothies made fresh for your day.</p>
+      <div class="hero-actions">
+        <button class="btn primary" onclick="showPage('menu')">Order now →</button>
+        <button class="btn ghost" onclick="openAssistant()">Ask AI Assistant ✨</button>
+      </div>
+      <div class="trust"><span>✓ Secure account</span><span>✓ Fast delivery</span><span>✓ Fresh daily</span></div>
+    </div>
+    <div class="hero-art">
+      <img src="https://images.unsplash.com/photo-1610970881699-44a5587cabec?auto=format&fit=crop&w=1000&q=85" alt="Fresh smoothie">
+      <div class="float-card"><b>Today's mood</b><br>Fresh & healthy 🥭</div>
+    </div>
+  </div>
+  <div class="section-head"><div><span class="eyebrow">WHY MR. YOGHURT</span><h2>Good taste, better habits.</h2></div></div>
+  <div class="feature-grid">
+    <article><div class="icon">🍊</div><h3>Fresh ingredients</h3><p>Prepared to order with fruit, yoghurt and healthy blends.</p></article>
+    <article><div class="icon">📍</div><h3>Door delivery</h3><p>Tell us your destination and we coordinate delivery.</p></article>
+    <article><div class="icon">🔒</div><h3>Secure account</h3><p>Your profile, orders and delivery details stay inside your account.</p></article>
+    <article><div class="icon">💬</div><h3>Customer service</h3><p>Need help? Call/WhatsApp 0697983933.</p></article>
+  </div>
+</section>
+
+<section id="menu" class="page">
+  <div class="section-head"><div><span class="eyebrow">OUR MENU</span><h2>Pick your fresh fix.</h2></div><input id="search" class="search" oninput="renderMenu()" placeholder="Search drinks…"></div>
+  <div class="chips">
+    <button class="chip active" onclick="filterCat('All',this)">All</button><button class="chip" onclick="filterCat('Juice',this)">Juices</button><button class="chip" onclick="filterCat('Yoghurt',this)">Yoghurt</button><button class="chip" onclick="filterCat('Detox',this)">Detox</button><button class="chip" onclick="filterCat('Smoothie',this)">Smoothies</button>
+  </div>
+  <div id="productGrid" class="product-grid"></div>
+</section>
+
+<section id="cart" class="page">
+  <div class="section-head"><div><span class="eyebrow">YOUR ORDER</span><h2>Cart & checkout</h2></div></div>
+  <div class="checkout-layout">
+    <div class="panel"><div id="cartItems"></div><div id="cartEmpty" class="empty">Your cart is empty. Add something fresh from the menu.</div></div>
+    <div class="panel checkout">
+      <h3>Delivery details</h3>
+      <div id="loginHint" class="notice">Please register/login before placing an order.</div>
+      <label>Full name<input id="orderName" placeholder="Your name"></label>
+      <label>Phone<input id="orderPhone" placeholder="06xxxxxxxx"></label>
+      <label>Destination / location<textarea id="orderLocation" placeholder="Street, area, landmark or delivery location"></textarea></label>
+      <label>Order note<textarea id="orderNote" placeholder="E.g. less sugar, no ice…"></textarea></label>
+      <label>Payment method<select id="payment"><option>Cash on delivery</option><option>Lipa Namba</option></select></label>
+      <div id="lipanote" class="notice hidden">Lipa Namba: use your business payment number supplied by Mr. Yoghurt, then enter the transaction reference below.</div>
+      <label id="refWrap" class="hidden">Payment reference<input id="paymentRef" placeholder="Transaction ID/reference"></label>
+      <div class="total"><span>Total</span><strong id="cartTotal">TZS 0</strong></div>
+      <button class="btn primary wide" onclick="placeOrder()">Place order</button>
+      <button class="btn whatsapp wide" onclick="whatsappOrder()">Order/help on WhatsApp</button>
+    </div>
+  </div>
+</section>
+
+<section id="orders" class="page">
+  <div class="section-head"><div><span class="eyebrow">TRACKING</span><h2>My orders</h2></div></div>
+  <div id="ordersList"></div>
+</section>
+
+<section id="account" class="page">
+  <div class="account-layout">
+    <div class="panel">
+      <span class="eyebrow">ACCOUNT</span><h2 id="accountTitle">Create your Mr. Yoghurt account</h2>
+      <div class="tabs"><button class="tab active" onclick="authTab('login',this)">Login</button><button class="tab" onclick="authTab('register',this)">Register</button></div>
+      <form id="authForm" onsubmit="handleAuth(event)">
+        <label>Full name<input id="authName" required placeholder="e.g. Amani John"></label>
+        <label>Phone<input id="authPhone" required placeholder="06xxxxxxxx"></label>
+        <label>Email<input id="authEmail" type="email" placeholder="you@example.com"></label>
+        <label>Password<input id="authPass" type="password" minlength="6" required placeholder="At least 6 characters"></label>
+        <label id="confirmWrap" class="hidden">Confirm password<input id="authConfirm" type="password"></label>
+        <button class="btn primary wide" id="authSubmit">Login</button>
+      </form>
+      <p class="muted">Your account is stored securely for this demo. Production deployment should use a real server/database with hashed passwords.</p>
+    </div>
+    <div class="panel profile">
+      <div class="avatar" id="avatar">?</div><h3 id="profileName">Not logged in</h3><p id="profilePhone">Create/login to manage orders.</p>
+      <button class="btn ghost" onclick="logout()">Log out</button>
+    </div>
+  </div>
+</section>
+
+<section id="admin" class="page">
+  <div id="adminLogin" class="admin-lock panel">
+    <span class="eyebrow">STAFF AREA</span><h2>Admin dashboard</h2><p>Demo login: <b>admin</b> / <b>MrYoghurt@2026</b></p>
+    <input id="adminUser" placeholder="Username"><input id="adminPass" type="password" placeholder="Password">
+    <button class="btn primary" onclick="adminLogin()">Enter dashboard</button>
+  </div>
+  <div id="adminDash" class="hidden">
+    <div class="admin-header"><div><span class="eyebrow">CONTROL CENTER</span><h2>Mr. Yoghurt Admin</h2></div><button class="btn ghost" onclick="adminLogout()">Logout</button></div>
+    <div class="stats"><div><span>Orders</span><b id="statOrders">0</b></div><div><span>Customers</span><b id="statCustomers">0</b></div><div><span>Sales</span><b id="statSales">TZS 0</b></div><div><span>Products</span><b id="statProducts">0</b></div></div>
+    <div class="admin-grid">
+      <div class="panel"><h3>Add / update drink</h3>
+        <input type="hidden" id="editId">
+        <label>Name<input id="pName" placeholder="Mango Smoothie"></label>
+        <label>Category<select id="pCat"><option>Juice</option><option>Yoghurt</option><option>Detox</option><option>Smoothie</option></select></label>
+        <label>Price (TZS)<input id="pPrice" type="number" min="0" placeholder="5000"></label>
+        <label>Image URL<input id="pImage" placeholder="https://…"></label>
+        <label>Description<textarea id="pDesc" placeholder="Fresh mango, yoghurt…"></textarea></label>
+        <button class="btn primary" onclick="saveProduct()">Save drink</button> <button class="btn ghost" onclick="clearProductForm()">Clear</button>
+      </div>
+      <div class="panel"><h3>Menu management</h3><div id="adminProducts"></div></div>
+    </div>
+    <div class="panel"><div class="table-head"><h3>All orders</h3><button class="btn small" onclick="exportOrders()">Export JSON</button></div><div id="adminOrders"></div></div>
+  </div>
+</section>
+</main>
+
+<footer><div><b>Mr. Yoghurt</b><p>Fresh juices • yoghurt • detox • smoothies</p></div><div><b>Customer service</b><p>0697983933</p></div><div><b>Orders</b><p>0676475401</p></div><div><b>Share</b><p><a href="https://mr.yoghurt.com" target="_blank">mr.yoghurt.com</a></p></div></footer>
+
+<div id="assistant" class="assistant hidden">
+  <div class="assistant-head"><b>✨ Mr. Yoghurt AI Assistant</b><button onclick="closeAssistant()">×</button></div>
+  <div id="chatLog" class="chat-log"><div class="bot">Hi! I can help you choose a drink, understand your order, or connect you to customer service.</div></div>
+  <div class="chat-input"><input id="chatInput" onkeydown="if(event.key==='Enter')sendChat()" placeholder="Ask about juices, detox, delivery…"><button onclick="sendChat()">➤</button></div>
+</div>
+<button class="ai-fab" onclick="openAssistant()">✨</button>
+
+<script src="app.js"></script>
+</body>
+</html>
