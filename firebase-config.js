@@ -3,11 +3,12 @@
 // 2. Register a Web App.
 // 3. Paste the config object from Firebase Console here.
 // Do not paste service-account private keys into this file.
+
 export const firebaseConfig = {
-  apiKey: "PASTE_FROM_FIREBASE_CONSOLE",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.firebasestorage.app",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIza......",
+  authDomain: "mr-yoghurt-2026.firebaseapp.com",
+  projectId: "mr-yoghurt-2026",
+  storageBucket: "mr-yoghurt-2026.firebasestorage.app",
+  messagingSenderId: "123456789...",
+  appId: "1:123456789:web:......"
 };
